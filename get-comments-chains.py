@@ -4,8 +4,11 @@ import datetime
 #get a subreddit, get all the latest posts.
 
 def getSubredditThreads(subreddit, amountOfThreads):
-	
+	limit = 100
+	if amountOfThreads < limit:
+		limit = amountOfThreads
 	results = []
+	keydict = {}
 	count = 1
 	afterCode = ''
 	while len(results) < amountOfThreads:
@@ -13,7 +16,7 @@ def getSubredditThreads(subreddit, amountOfThreads):
 		count = count + 1
 		
 		
-		baseurl = 'https://www.reddit.com/r/' + subreddit + '/.json'
+		baseurl = 'https://www.reddit.com/r/' + subreddit + '/new/.json'
 		params = {}
 		params['limit'] = amountOfThreads
 		params['after'] = afterCode
@@ -29,9 +32,15 @@ def getSubredditThreads(subreddit, amountOfThreads):
 			commentdata['subreddit'] = subreddit
 			commentdata['thread'] = comment['data']['id']
 			#print comment['data']['created']
-			print datetime.datetime.fromtimestamp(comment['data']['created'])
-			print json.dumps(commentdata, indent=4, sort_keys=True)
-			results.append(commentdata)
+			#check if duplicated
+			if commentdata['thread'] not in keydict:
+				keydict[commentdata['thread']] = True;
+				print datetime.datetime.fromtimestamp(comment['data']['created'])
+				print json.dumps(commentdata, indent=4, sort_keys=True)
+				results.append(commentdata)
+			else:
+				print 'duplicate: ', commentdata['thread']
+		print 'results ', len(results)
 	
 	#print json.dumps(data, indent=4, sort_keys=True)
 	
@@ -60,7 +69,7 @@ def getThreadComments(subreddit, threadname, results):
 			
 			if 'prev_author' in reply:
 				#save it in the results
-				print '  ', author,' > ', reply['prev_author']
+				#print '  ', author,' > ', reply['prev_author']
 				#check if source exists
 				if reply['prev_author'] not in results:
 					results[reply['prev_author']] = {}
@@ -71,7 +80,8 @@ def getThreadComments(subreddit, threadname, results):
 				results[reply['prev_author']][author] = results[reply['prev_author']][author] + 1
 				
 			else:
-				print ' root ', author
+				#print ' root ', author
+				True
 			#check if the comment has childrens
 			if reply['data']['replies'] != "":
 				#get childrens, add to list.
@@ -81,21 +91,33 @@ def getThreadComments(subreddit, threadname, results):
 					#if the object has kind: "more" it means that there are just codes
 					if child['kind'] == "t1":
 						replies.append(child)
-						print '  added +1 to ', author
-					elif child['kind'] == "t1":
+						#print '  added +1 to ', author
+					elif child['kind'] == "more":
 						print ' more comments'
+						print json.dumps(child, indent=4, sort_keys=True)
 						# still to understand how to get 'more' comments
 						# see https://www.reddit.com/r/redditdev/comments/67mdxm/how_to_use_apimorechildren/
+						# this is another example https://www.reddit.com/api/morechildren.json?api_type=json&link_id=t3_7fk5mw&children=dqcshyh
+						
 					else:
 						print ' other kind'
+						print json.dumps(child, indent=4, sort_keys=True)
 		else:
 			#TODO do something with more
 			print 'more comments not parsed'
 		
-		
+def getMoreComments(threadId, childId):
+	baseurl = 'https://www.reddit.com/api/morechildren.json?api_type=json'
+	params = {}
+	params['link_id'] = threadId
+	params['children'] = childId
+	r = requests.get(baseurl, params = params, headers = {'User-agent': 'chainBot 0.1'})
+	data = r.json()
+	#rebuild the tree out of the comments
+	
 	
 
-threads = getSubredditThreads('italy', 50000)
+threads = getSubredditThreads('italy', 900)
 edges = {}
 
 for thread in threads:
