@@ -1,52 +1,6 @@
 import json, requests, csv
 import datetime
 
-#get a subreddit, get all the latest posts.
-
-def getSubredditThreads(subreddit, amountOfThreads):
-	limit = 100
-	if amountOfThreads < limit:
-		limit = amountOfThreads
-	results = []
-	keydict = {}
-	count = 1
-	afterCode = ''
-	while len(results) < amountOfThreads:
-		print 'getting page ', count
-		count = count + 1
-		
-		
-		baseurl = 'https://www.reddit.com/r/' + subreddit + '/new/.json'
-		params = {}
-		params['limit'] = amountOfThreads
-		params['after'] = afterCode
-	
-		r = requests.get(baseurl, params = params, headers = {'User-agent': 'chainBot 0.1'})
-	
-		data = r.json()
-		afterCode = data['data']['after']
-		print 'new after code: ', afterCode
-		
-		for comment in data['data']['children']:
-			commentdata = {}
-			commentdata['subreddit'] = subreddit
-			commentdata['thread'] = comment['data']['id']
-			#print comment['data']['created']
-			#check if duplicated
-			if commentdata['thread'] not in keydict:
-				keydict[commentdata['thread']] = True;
-				print datetime.datetime.fromtimestamp(comment['data']['created'])
-				print json.dumps(commentdata, indent=4, sort_keys=True)
-				results.append(commentdata)
-			else:
-				print 'duplicate: ', commentdata['thread']
-		print 'results ', len(results)
-	
-	#print json.dumps(data, indent=4, sort_keys=True)
-	
-	return results
-
-# get all the comments for one thread
 
 def getThreadComments(subreddit, threadname, results):
 	
@@ -116,12 +70,31 @@ def getMoreComments(threadId, childId):
 	#rebuild the tree out of the comments
 	
 
-threads = getSubredditThreads('italy', 100)
+#load ids from csv
+threads = []
+errors = []
+
+with open('data/r-italy-posts-from-bigquery.csv') as csvfile:
+    readCSV = csv.reader(csvfile, delimiter=',')
+    headers = readCSV.next()
+    for row in readCSV:
+    	threads.append(row[1])
+
+#threads = getSubredditThreads('italy', 100)
 print json.dumps(threads, indent=4, sort_keys=True)
 edges = {}
 
+count = 0
+
 for thread in threads:
-	tdata = getThreadComments(thread['subreddit'], thread['thread'], edges)
+	count = count + 1
+	print count, '/', len(threads)
+	print thread
+	try:
+		tdata = getThreadComments('italy', thread, edges)
+	except:
+		print 'ERRORE'
+		errors.append([thread])
 	
 #save results in csv
 
@@ -134,8 +107,16 @@ for sourceName in edges:
 	for targetName in source:
 		value = source[targetName]
 		print 'adding ', sourceName, targetName, value
-		writer.writerow([sourceName,targetName,value])
+		if(value > 1):
+			writer.writerow([sourceName,targetName,value])
 
+ofile  = open('errors.csv', "wb")
+writer = csv.writer(ofile, delimiter='\t', quotechar='"')
+writer.writerow(['thread','error'])
+
+#save errors in csv
+for err in errors:
+	writer.writerow[err]
 	
 #print json.dumps(edges, indent=4, sort_keys=True)
 
