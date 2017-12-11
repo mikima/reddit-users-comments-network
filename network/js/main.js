@@ -528,7 +528,7 @@ function nodeActive(a) {
 
 	if (groupByDirection) {
 		size=Object.size(mutual);
-		f.push("<h2>Riceve e invia commenti a:</h2>");
+		f.push("<h2>Trigger vicendevole:</h2>");
 		(size>0)? f=f.concat(createList(mutual)) : f.push("Nessuno<br>");
 		size=Object.size(incoming);
 		f.push("<h2>Attira i commenti di:</h2>");
