@@ -9,11 +9,11 @@
   },
   "text": {
     "more": "",
-    "intro": "La rete mostra tutti gli utenti che si sono commentati a vicenda negli ultimi 900 post (circa inizio novembre 2017). ",
+    "intro": "La rete mostra tutti gli utenti che si sono commentati maggiormente a vicenda durante il 2017.",
     "title": ""
   },
   "legend": {
-    "edgeLabel": "Due utenti sono connessi quando uno dei due ha scritto alemno 4 volte all'altro.",
+    "edgeLabel": "Due utenti sono connessi quando uno dei due ha scritto almeno 17 volte all'altro.",
     "colorLabel": "Qauntità di risposte ricevute",
     "nodeLabel": "Ogni nodo rappresenta un utente"
   },
